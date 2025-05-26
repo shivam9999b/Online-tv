@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Country Login Website</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      font-family: 'Poppins', sans-serif;
+      color: white;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    header {
+      font-size: 32px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+
+    select {
+      width: 250px;
+      padding: 12px;
+      border-radius: 8px;
+      border: none;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+
+    .login-buttons button {
+      width: 250px;
+      padding: 12px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+      font-weight: 600;
+    }
+
+    .google-btn {
+      background: #fff;
+      color: #4285F4;
+    }
+
+    .google-btn:hover {
+      background: #f0f0f0;
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      width: 100%;
+      text-align: center;
+    }
+
+    footer label {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    footer input[type="checkbox"] {
+      appearance: none;
+      width: 40px;
+      height: 22px;
+      background: #ccc;
+      border-radius: 15px;
+      position: relative;
+      outline: none;
+      cursor: pointer;
+    }
+
+    footer input[type="checkbox"]::before {
+      content: "";
+      position: absolute;
+      width: 18px;
+      height: 18px;
+      background: #fff;
+      border-radius: 50%;
+      top: 2px;
+      left: 2px;
+      transition: 0.3s;
+    }
+
+    footer input[type="checkbox"]:checked {
+      background: #4CAF50;
+    }
+
+    footer input[type="checkbox"]:checked::before {
+      transform: translateX(18px);
+    }
+
+    footer p {
+      font-size: 13px;
+      margin-top: 8px;
+      color: #ddd;
+    }
+
+    footer a {
+      color: #a6ffd1;
+      text-decoration: underline;
+    }
+
+    @media (max-width: 600px) {
+      header { font-size: 24px; }
+      select, .login-buttons button { width: 200px; font-size: 14px; }
+    }
+
+    @media (min-width: 601px) and (max-width: 1024px) {
+      header { font-size: 28px; }
+      select, .login-buttons button { width: 220px; font-size: 15px; }
+    }
+
+    @media (min-width: 1025px) {
+      header { font-size: 32px; }
+      select, .login-buttons button { width: 250px; font-size: 16px; }
+    }
+  </style>
+
+</head>
+<body>
+
+  <header>Login with Country</header>
+
+  <!-- Country Dropdown -->
+  <select id="countrySelect">
+    <option value="">Select Country</option>
+  </select>
+
+  <!-- Gender Dropdown with Emojis -->
+  <select id="genderSelect">
+    <option value="">Select Gender</option>
+    <option value="male">♂️ Male</option>
+    <option value="female">♀️ Female</option>
+  </select>
+
+  <!-- Google Login Button -->
+  <div class="login-buttons">
+    <button class="google-btn" onclick="loginWithGoogle()">Login with Google</button>
+  </div>
+
+  <!-- Stylish Footer -->
+  <footer>
+    <label>
+      <input type="checkbox" id="ageCheck" />
+      I confirm that I am at least 18 years old.
+    </label>
+    <p>I accept <a href="/online chating /parivcy.html"target="/blank">User Agreement</a>.</p>
+  </footer>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+  <script>
+    // Firebase Config
+    const firebaseConfig = {
+      apiKey: "AIzaSyD9IUXYLnLJLpborYhtzj86EGoZgJ5JOwk",
+      authDomain: "country-login-73d8a.firebaseapp.com",
+      projectId: "country-login-73d8a",
+      storageBucket: "country-login-73d8a.appspot.com",
+      messagingSenderId: "199478752615",
+      appId: "1:199478752615:web:bbecfed8887a0493372bc2"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    const countrySelect = document.getElementById('countrySelect');
+    const countries = [
+      "India", "United States", "United Kingdom", "Australia", "Canada", "Germany",
+      "France", "Japan", "China", "Brazil", "Mexico", "South Africa", "Russia",
+      "Italy", "Spain", "Indonesia", "Netherlands", "Sweden", "Switzerland", "Turkey",
+      "Nepal", "Bangladesh", "Pakistan", "Sri Lanka", "New Zealand", "UAE", "Saudi Arabia"
+    ];
+
+    countries.forEach(country => {
+      const option = document.createElement('option');
+      option.value = country;
+      option.textContent = country;
+      countrySelect.appendChild(option);
+    });
+
+    function loginWithGoogle() {
+      const selectedCountry = document.getElementById('countrySelect').value;
+      const selectedGender = document.getElementById('genderSelect').value;
+      const ageConfirmed = document.getElementById('ageCheck').checked;
+
+      if (selectedCountry === "") {
+        alert("Please select your country first!");
+        return;
+      }
+
+      if (selectedGender === "") {
+        alert("Please select your gender!");
+        return;
+      }
+
+      if (!ageConfirmed) {
+        alert("You must confirm that you're at least 18 years old.");
+        return;
+      }
+
+      const provider = new firebase.auth.GoogleAuthProvider();
+      auth.signInWithPopup(provider)
+        .then((result) => {
+          const user = result.user;
+          alert("Google Login Successful! Welcome " + user.displayName);
+
+          sessionStorage.setItem('userName', user.displayName);
+          sessionStorage.setItem('userEmail', user.email);
+          sessionStorage.setItem('userCountry', selectedCountry);
+          sessionStorage.setItem('userGender', selectedGender);
+
+          window.location.href = "/online chating /chating.html";
+        })
+        .catch((error) => {
+          console.error(error);
+          alert("Google Login Failed!");
+        });
+    }
+  </script>
+
+</body>
+</html>

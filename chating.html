@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Stranger Chat</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body {
+      background: #e9f2fb;
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .chat-container {
+      width: 500px;
+      height: 90vh;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .chat-header {
+      padding: 20px;
+      background: #007bff;
+      color: white;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    #messages {
+      flex: 1;
+      padding: 20px;
+      overflow-y: auto;
+      background: #f9fbfc;
+    }
+
+    #messages div {
+      margin-bottom: 12px;
+      padding: 10px 14px;
+      border-radius: 18px;
+      max-width: 75%;
+      clear: both;
+    }
+
+    .self {
+      background: #d1ecf1;
+      align-self: flex-end;
+      margin-left: auto;
+      text-align: right;
+    }
+
+    .other {
+      background: #f1f1f1;
+      align-self: flex-start;
+      margin-right: auto;
+      text-align: left;
+    }
+
+    .chat-input {
+      display: flex;
+      padding: 15px;
+      border-top: 1px solid #ddd;
+      background: #fff;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 10px 15px;
+      font-size: 16px;
+      border-radius: 25px;
+      border: 1px solid #ccc;
+      outline: none;
+    }
+
+    .chat-input button {
+      margin-left: 10px;
+      padding: 10px 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 25px;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+    }
+
+    .chat-footer {
+      display: flex;
+      justify-content: center;
+      padding: 10px;
+      border-top: 1px solid #ddd;
+      background: #f8f9fa;
+    }
+
+    .chat-footer button {
+      padding: 8px 16px;
+      border-radius: 20px;
+      border: none;
+      background-color: #dc3545;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<div class="chat-container">
+  <div class="chat-header">Stranger Chat</div>
+
+  <div id="messages"></div>
+
+  <div class="chat-input">
+    <input type="text" id="messageInput" placeholder="Type a message..." />
+    <button id="sendBtn">Send</button>
+  </div>
+
+  <div class="chat-footer">
+    <button id="nextBtn">Next Stranger</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+  import {
+    getAuth,
+    signInAnonymously,
+    onAuthStateChanged,
+  } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    query,
+    orderBy,
+    onSnapshot,
+    serverTimestamp,
+    getDocs,
+    deleteDoc,
+    doc,
+  } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyCHq0bxvBR4cHF4ImhDunepHj9GHlaDA_E",
+    authDomain: "chating-e0e5a.firebaseapp.com",
+    projectId: "chating-e0e5a",
+    storageBucket: "chating-e0e5a.appspot.com",
+    messagingSenderId: "638067889380",
+    appId: "1:638067889380:web:97ac7ed4617e0f775208f1"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
+
+  const messagesDiv = document.getElementById("messages");
+  const messageInput = document.getElementById("messageInput");
+  const sendBtn = document.getElementById("sendBtn");
+  const nextBtn = document.getElementById("nextBtn");
+
+  let currentUserUid = null;
+  let unsubscribe = null;
+
+  signInAnonymously(auth).catch(error => {
+    alert("Auth error: " + error.message);
+  });
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUserUid = user.uid;
+      await clearOldMessages();
+      startListening();
+    }
+  });
+
+  sendBtn.addEventListener("click", sendMessage);
+  messageInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") sendMessage();
+  });
+
+  nextBtn.addEventListener("click", async () => {
+    if (unsubscribe) unsubscribe();
+    await clearOldMessages();
+    startListening();
+  });
+
+  async function clearOldMessages() {
+    const snapshot = await getDocs(collection(db, "messages"));
+    const deletePromises = [];
+    snapshot.forEach(docSnap => {
+      deletePromises.push(deleteDoc(doc(db, "messages", docSnap.id)));
+    });
+    await Promise.all(deletePromises);
+    messagesDiv.innerHTML = "";
+  }
+
+  async function sendMessage() {
+    const text = messageInput.value.trim();
+    if (!text || !currentUserUid) return;
+
+    await addDoc(collection(db, "messages"), {
+      uid: currentUserUid,
+      text: text,
+      timestamp: serverTimestamp()
+    });
+    messageInput.value = "";
+  }
+
+  function startListening() {
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    unsubscribe = onSnapshot(q, (snapshot) => {
+      messagesDiv.innerHTML = "";
+      snapshot.forEach(doc => {
+        const msg = doc.data();
+        const msgDiv = document.createElement("div");
+        msgDiv.textContent = msg.text;
+        msgDiv.className = msg.uid === currentUserUid ? "self" : "other";
+        messagesDiv.appendChild(msgDiv);
+      });
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    });
+  }
+</script>
+
+</body>
+</html>

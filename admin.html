@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Admin Panel - Chat Messages</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #e0f7fa, #80deea);
+      animation: fadeIn 1s ease forwards;
+      color: #333;
+    }
+
+    h1 {
+      text-align: center;
+      color: #00796b;
+      text-shadow: 1px 1px 3px #004d40;
+      margin-bottom: 5px;
+    }
+
+    #userCount {
+      font-size: 18px;
+      margin: 10px 0 20px 0;
+      text-align: center;
+      font-weight: 600;
+      color: #004d40;
+    }
+
+    #searchInput {
+      display: block;
+      margin: 0 auto 25px auto;
+      padding: 12px 20px;
+      width: 100%;
+      max-width: 400px;
+      font-size: 16px;
+      border-radius: 30px;
+      border: 2px solid #004d40;
+      outline: none;
+      box-shadow: 0 2px 8px rgba(0,77,64,0.2);
+      transition: all 0.3s ease;
+    }
+
+    #searchInput:focus {
+      border-color: #00796b;
+      box-shadow: 0 4px 15px rgba(0,121,107,0.5);
+      background-color: #e0f2f1;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 12px;
+      background: transparent;
+      animation: fadeIn 1.2s ease forwards;
+    }
+
+    th, td {
+      padding: 16px 20px;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      text-align: left;
+      transition: background-color 0.3s ease;
+      word-break: break-word;
+    }
+
+    th {
+      background: #00796b;
+      color: white;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(0,121,107,0.7);
+    }
+
+    tbody tr:hover td {
+      background: #b2dfdb;
+      color: #004d40;
+      transform: scale(1.02);
+      box-shadow: 0 6px 20px rgba(0,121,107,0.3);
+      transition: all 0.3s ease;
+    }
+
+    button {
+      padding: 8px 14px;
+      margin: 5px 5px;
+      background-color: #d32f2f;
+      border: none;
+      color: white;
+      cursor: pointer;
+      border-radius: 25px;
+      font-weight: 600;
+      box-shadow: 0 3px 8px rgba(211,47,47,0.5);
+      transition: background-color 0.3s ease, transform 0.2s ease;
+    }
+
+    button.block-btn {
+      background-color: #fbc02d;
+      color: #4e342e;
+      box-shadow: 0 3px 8px rgba(251,192,45,0.5);
+    }
+
+    button:hover {
+      background-color: #b71c1c;
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(183,28,28,0.8);
+    }
+
+    button.block-btn:hover {
+      background-color: #f9a825;
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(249,168,37,0.8);
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    @media (max-width: 768px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+
+      thead {
+        display: none;
+      }
+
+      tr {
+        margin-bottom: 15px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      }
+
+      td {
+        position: relative;
+        padding-left: 50%;
+      }
+
+      td::before {
+        position: absolute;
+        top: 16px;
+        left: 20px;
+        width: 45%;
+        padding-right: 10px;
+        font-weight: bold;
+        white-space: nowrap;
+      }
+
+      td:nth-of-type(1)::before { content: "User ID"; }
+      td:nth-of-type(2)::before { content: "Message"; }
+      td:nth-of-type(3)::before { content: "Time"; }
+      td:nth-of-type(4)::before { content: "Actions"; }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Admin Panel - Chat Messages</h1>
+  <div id="userCount">Loading user count...</div>
+  <input type="text" id="searchInput" placeholder="Search by User ID or Message..." />
+
+  <table id="messagesTable">
+    <thead>
+      <tr>
+        <th>User ID</th>
+        <th>Message</th>
+        <th>Time</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+    import { getFirestore, collection, query, orderBy, onSnapshot, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCHq0bxvBR4cHF4ImhDunepHj9GHlaDA_E",
+      authDomain: "chating-e0e5a.firebaseapp.com",
+      projectId: "chating-e0e5a",
+      storageBucket: "chating-e0e5a.appspot.com",
+      messagingSenderId: "638067889380",
+      appId: "1:638067889380:web:97ac7ed4617e0f775208f1"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const tableBody = document.querySelector("#messagesTable tbody");
+    const userCountDiv = document.getElementById("userCount");
+    const searchInput = document.getElementById("searchInput");
+
+    let blockedUsers = new Set();
+
+    async function loadBlockedUsers() {
+      const docSnap = await getDoc(doc(db, "blockedUsers", "list")).catch(() => null);
+      if (docSnap && docSnap.exists()) {
+        const data = docSnap.data();
+        if (data && data.uids) {
+          blockedUsers = new Set(data.uids);
+        }
+      }
+    }
+
+    async function saveBlockedUsers() {
+      await setDoc(doc(db, "blockedUsers", "list"), { uids: Array.from(blockedUsers) });
+    }
+
+    async function toggleBlockUser(uid) {
+      if (blockedUsers.has(uid)) {
+        blockedUsers.delete(uid);
+      } else {
+        blockedUsers.add(uid);
+      }
+      await saveBlockedUsers();
+    }
+
+    async function deleteMessage(docId) {
+      await deleteDoc(doc(db, "messages", docId));
+    }
+
+    let allMessages = [];
+
+    function renderTable(filterText = "") {
+      tableBody.innerHTML = "";
+      let filteredMessages = allMessages.filter(({ data }) => {
+        const lowerFilter = filterText.toLowerCase();
+        return data.uid.toLowerCase().includes(lowerFilter) || data.text.toLowerCase().includes(lowerFilter);
+      });
+
+      filteredMessages.forEach(({ id, data }) => {
+        const blocked = blockedUsers.has(data.uid);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${data.uid}${blocked ? " (Blocked)" : ""}</td>
+          <td>${data.text}</td>
+          <td>${data.timestamp?.toDate().toLocaleString() || ''}</td>
+          <td>
+            <button onclick="deleteMessage('${id}')">Delete</button>
+            <button class="block-btn" onclick="toggleBlockUser('${data.uid}')">${blocked ? "Unblock" : "Block"}</button>
+          </td>
+        `;
+        tableBody.appendChild(tr);
+      });
+
+      userCountDiv.textContent = `Total Users: ${new Set(allMessages.map(m => m.data.uid)).size}`;
+    }
+
+    const q = query(collection(db, "messages"), orderBy("timestamp"));
+    onSnapshot(q, async (snapshot) => {
+      allMessages = [];
+      snapshot.forEach(docSnap => {
+        allMessages.push({ id: docSnap.id, data: docSnap.data() });
+      });
+      await loadBlockedUsers();
+      renderTable(searchInput.value);
+    });
+
+    searchInput.addEventListener("input", () => {
+      renderTable(searchInput.value);
+    });
+
+    window.deleteMessage = async function(docId) {
+      if(confirm("Are you sure you want to delete this message?")) {
+        await deleteMessage(docId);
+      }
+    };
+
+    window.toggleBlockUser = async function(uid) {
+      await toggleBlockUser(uid);
+      renderTable(searchInput.value);
+    };
+  </script>
+</body>
+</html>

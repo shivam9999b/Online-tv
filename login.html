@@ -1,0 +1,139 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Login / Signup</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body, html {
+      margin: 0; padding: 0;
+      font-family: 'Poppins', sans-serif;
+      height: 100%; overflow: hidden;
+    }
+    #bgVideo {
+      position: fixed;
+      top: 0; left: 0;
+      min-width: 100%; min-height: 100%;
+      object-fit: cover;
+      z-index: -1;
+    }
+    .container {
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.65);
+      padding: 30px;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 400px;
+      color: white;
+      text-align: center;
+    }
+    h2 { margin-bottom: 20px; }
+    input, button {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border-radius: 8px;
+      border: none;
+      font-size: 16px;
+    }
+    .google-btn {
+      background: #fff;
+      color: #4285F4;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .google-btn:hover {
+      background: #f0f0f0;
+    }
+    .signup-btn {
+      background: #4CAF50;
+      color: white;
+      font-weight: bold;
+    }
+    .signup-btn:hover {
+      background: #45a049;
+    }
+    .error { color: #ffcccc; font-size: 14px; }
+  </style>
+</head>
+<body>
+
+<!-- Background Video -->
+<video autoplay muted loop playsinline id="bgVideo">
+  <source src="/website /Web.mp4" type="video/mp4">
+</video>
+
+<div class="container">
+  <h2>🙂 Welcome</h2>
+  
+  <!-- Google Login -->
+  <button class="google-btn" onclick="loginWithGoogle()">Login with Google</button>
+
+  <hr style="margin: 20px 0; border: 1px solid #ccc;" />
+
+  <!-- Email Signup -->
+  <input type="email" id="email" placeholder="Email for Signup" />
+  <input type="password" id="password" placeholder="Password" />
+  <button class="signup-btn" onclick="signup()">Sign Up with Email</button>
+  
+  <div class="error" id="error-message"></div>
+</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-auth-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyD9IUXYLnLJLpborYhtzj86EGoZgJ5JOwk",
+    authDomain: "country-login-73d8a.firebaseapp.com",
+    projectId: "country-login-73d8a",
+    storageBucket: "country-login-73d8a.appspot.com",
+    messagingSenderId: "199478752615",
+    appId: "1:199478752615:web:bbecfed8887a0493372bc2"
+  };
+
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
+
+  function loginWithGoogle() {
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider)
+      .then((result) => {
+        const user = result.user;
+        alert("Welcome " + user.displayName);
+        window.location.href = "chating.html";
+      })
+      .catch((error) => {
+        document.getElementById("error-message").textContent = error.message;
+      });
+  }
+
+  function signup() {
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+    const error = document.getElementById("error-message");
+
+    if (!email || !password) {
+      error.textContent = "Please enter email and password.";
+      return;
+    }
+
+    auth.createUserWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        alert("Signup successful!");
+        window.location.href = "chating.html";
+      })
+      .catch((err) => {
+        error.textContent = err.message;
+      });
+  }
+</script>
+
+</body>
+</html>
